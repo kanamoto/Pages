@@ -1,14 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Ripple Canvas</title>
+  <title>Ripple Reflection & Shadow</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      background: #111;
       overflow: hidden;
+      background-color: background: radial-gradient(circle, #002244, #000000);
     }
     canvas {
       display: block;
@@ -16,44 +17,89 @@
   </style>
 </head>
 <body>
-  <canvas id="rippleCanvas"></canvas>
-
+<canvas id="canvas"></canvas>
 <script>
-  const canvas = document.getElementById('rippleCanvas');
+  const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
   let ripples = [];
-  let hue = 200; // 初期色：青っぽい
+  let hue = 200;
+  let isMouseDown = false;
+  let lastRippleTime = 0;
+  let mouseX = 0;
+  let mouseY = 0;
 
-  function resizeCanvas() {
+  function resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
   }
-  resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
+  resize();
+  window.addEventListener('resize', resize);
 
-  canvas.addEventListener('click', (e) => {
-    hue = (hue + 5) % 360; // 少しずつ色相を変化
+  function createRipple(x, y) {
+    const radius = 10 + Math.random() * 30;
+    hue = (hue + 5) % 360;
     ripples.push({
-      x: e.clientX,
-      y: e.clientY,
-      radius: 0,
+      x,
+      y,
+      radius,
       alpha: 1.0,
-      hue: hue
+      hue
     });
+  }
+
+  canvas.addEventListener('mousedown', (e) => {
+    isMouseDown = true;
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    createRipple(mouseX, mouseY);
+  });
+  canvas.addEventListener('mouseup', () => {
+    isMouseDown = false;
+  });
+  canvas.addEventListener('mousemove', (e) => {
+  	if (isMouseDown == false){
+  		return;
+  	}
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    createRipple(mouseX, mouseY);
   });
 
   function draw() {
-    ctx.fillStyle = '#111';
+    ctx.fillStyle = '#001f3f';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const now = Date.now();
+    if (isMouseDown && now - lastRippleTime > 100) {
+      createRipple(mouseX, mouseY);
+      lastRippleTime = now;
+    }
 
     ripples = ripples.filter(r => r.alpha > 0);
     for (let r of ripples) {
       ctx.save();
+
+      // 反射
+      ctx.beginPath();
+      ctx.arc(r.x, canvas.height - (r.y - canvas.height / 2), r.radius, 0, Math.PI * 2);
+      ctx.strokeStyle = `hsla(${r.hue}, 100%, 40%, ${r.alpha * 0.2})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // 影（下に落とす）
+      ctx.beginPath();
+      ctx.arc(r.x, r.y + 10, r.radius, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(0, 0, 0, ${r.alpha * 0.2})`;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // 波紋本体
       ctx.beginPath();
       ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
-      ctx.strokeStyle = `hsla(${r.hue}, 100%, 70%, ${r.alpha})`; // ← 色相で描画
+      ctx.strokeStyle = `hsla(${r.hue}, 100%, 70%, ${r.alpha})`;
       ctx.lineWidth = 2;
       ctx.stroke();
+
       ctx.restore();
 
       r.radius += 2;
@@ -65,6 +111,5 @@
 
   draw();
 </script>
-
 </body>
 </html>
