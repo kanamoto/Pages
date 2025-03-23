@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ripple Canvas</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #111;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="rippleCanvas"></canvas>
+
+<script>
+  const canvas = document.getElementById('rippleCanvas');
+  const ctx = canvas.getContext('2d');
+  let ripples = [];
+  let hue = 200; // 初期色：青っぽい
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  canvas.addEventListener('click', (e) => {
+    hue = (hue + 5) % 360; // 少しずつ色相を変化
+    ripples.push({
+      x: e.clientX,
+      y: e.clientY,
+      radius: 0,
+      alpha: 1.0,
+      hue: hue
+    });
+  });
+
+  function draw() {
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ripples = ripples.filter(r => r.alpha > 0);
+    for (let r of ripples) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+      ctx.strokeStyle = `hsla(${r.hue}, 100%, 70%, ${r.alpha})`; // ← 色相で描画
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+
+      r.radius += 2;
+      r.alpha -= 0.015;
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+</script>
+
+</body>
+</html>
